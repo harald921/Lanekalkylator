@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lånekalkylator</title>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            background-color: #f0f2f5; 
+            color: #1c1e21;
+            display: flex;
+            justify-content: center;
+        }
+        .container { 
+            background-color: #ffffff; 
+            padding: 20px; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1), 0 8px 16px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 700px;
+        }
+        h1, h2 { 
+            color: #1877f2; 
+            border-bottom: 1px solid #dddfe2;
+            padding-bottom: 10px;
+        }
+        h1 { text-align: center; margin-bottom: 25px; }
+        h2 { font-size: 1.3em; margin-top: 20px; margin-bottom: 15px;}
+        .section { margin-bottom: 25px; }
+        label { 
+            display: block; 
+            margin-bottom: 6px; 
+            font-weight: 600; 
+            color: #606770;
+        }
+        input[type="number"], input[type="date"] { 
+            width: calc(100% - 22px); 
+            padding: 10px; 
+            margin-bottom: 12px; 
+            border: 1px solid #dddfe2; 
+            border-radius: 6px; 
+            box-sizing: border-box; 
+            font-size: 1em;
+        }
+        input[type="number"]:focus, input[type="date"]:focus {
+            border-color: #1877f2;
+            box-shadow: 0 0 0 2px #e7f3ff;
+        }
+        button { 
+            padding: 10px 18px; 
+            background-color: #1877f2; 
+            color: white; 
+            border: none; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-size: 1em; 
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        button:hover { background-color: #166fe5; }
+        #paymentsList { list-style-type: none; padding-left: 0; }
+        #paymentsList li { 
+            background-color: #f0f2f5; 
+            margin-bottom: 6px; 
+            padding: 10px; 
+            border-radius: 4px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            font-size: 0.95em;
+        }
+        #paymentsList li button {
+            background-color: #fa3e3e;
+            font-size: 0.8em;
+            padding: 6px 10px;
+        }
+        #paymentsList li button:hover {
+            background-color: #e03030;
+        }
+        #transactionsTable { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 15px; 
+            font-size: 0.9em;
+        }
+        #transactionsTable th, #transactionsTable td { 
+            border: 1px solid #dddfe2; 
+            padding: 10px; 
+            text-align: left; 
+        }
+        #transactionsTable th { 
+            background-color: #1877f2; 
+            color: white; 
+            font-weight: 600;
+        }
+        #transactionsTable tr:nth-child(even) { background-color: #f7f8fa; }
+        #totalDebtResult { 
+            font-size: 1.25em; 
+            font-weight: bold; 
+            color: #1877f2; 
+            background-color: #e7f3ff;
+            padding: 12px;
+            border-radius: 6px;
+            text-align: center;
+            margin-top: 15px;
+        }
+        .input-group { 
+            display: flex; 
+            gap: 10px; 
+            align-items: flex-end; 
+            margin-bottom: 12px; 
+        }
+        .input-group > div { flex-grow: 1; }
+        .input-group label { margin-bottom: 5px; }
+        .input-group input[type="date"], .input-group input[type="number"] { width: 100%; margin-bottom: 0; }
+        .input-group button { flex-shrink: 0; }
+        
+        @media (max-width: 600px) {
+            .input-group { flex-direction: column; align-items: stretch; }
+            .input-group > div { width: 100%; }
+            .input-group input[type="date"], .input-group input[type="number"], .input-group button { width: 100%; }
+            .input-group label { margin-bottom: 5px; }
+            .input-group button { margin-top: 5px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Lånekalkylator</h1>
+
+        <div class="section">
+            <h2>Grunduppgifter</h2>
+            <div>
+                <label for="loanAmount">Lånebelopp (SEK):</label>
+                <input type="number" id="loanAmount" value="100000" step="0.01">
+            </div>
+            <div>
+                <label for="interestRate">Årlig ränta (%):</label>
+                <input type="number" id="interestRate" value="5" step="0.01">
+            </div>
+            <div>
+                <label for="loanStartDate">Lånets startdatum:</label>
+                <input type="date" id="loanStartDate">
+            </div>
+            <div>
+                <label for="calculationDate">Beräkna skuld per datum:</label>
+                <input type="date" id="calculationDate">
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Inbetalningar</h2>
+            <div class="input-group">
+                <div>
+                    <label for="paymentDate">Datum:</label>
+                    <input type="date" id="paymentDate">
+                </div>
+                <div>
+                    <label for="paymentAmount">Belopp (SEK):</label>
+                    <input type="number" id="paymentAmount" step="0.01">
+                </div>
+                <button id="addPaymentBtn">Lägg till inbetalning</button>
+            </div>
+            <h3 style="font-size: 1.1em; color: #606770; margin-top: 15px;">Tillagda inbetalningar:</h3>
+            <ul id="paymentsList"></ul>
+        </div>
+        
+        <div class="section">
+            <h2>Resultat</h2>
+            <p id="totalDebtResult">Ange grunduppgifter för att se beräkning.</p>
+            <h3>Transaktionshistorik:</h3>
+            <table id="transactionsTable">
+                <thead>
+                    <tr>
+                        <th>Datum</th>
+                        <th>Beskrivning</th>
+                        <th>Förändring (SEK)</th>
+                        <th>Saldo (SEK)</th>
+                    </tr>
+                </thead>
+                <tbody id="transactionsTableBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const loanAmountInput = document.getElementById('loanAmount');
+        const interestRateInput = document.getElementById('interestRate');
+        const loanStartDateInput = document.getElementById('loanStartDate');
+        const calculationDateInput = document.getElementById('calculationDate');
+        
+        const paymentDateInput = document.getElementById('paymentDate');
+        const paymentAmountInput = document.getElementById('paymentAmount');
+        const addPaymentBtn = document.getElementById('addPaymentBtn');
+        const paymentsListUI = document.getElementById('paymentsList');
+                
+        const totalDebtResultUI = document.getElementById('totalDebtResult');
+        const transactionsTableBodyUI = document.getElementById('transactionsTableBody');
+
+        let payments = [];
+
+        function getTodayDateString() {
+            const today = new Date();
+            return today.toISOString().split('T')[0];
+        }
+
+        function getDateStringOneYearFromToday() {
+            const today = new Date();
+            today.setFullYear(today.getFullYear() + 1);
+            return today.toISOString().split('T')[0];
+        }
+
+        function initializeDefaultDates() {
+            const todayStr = getTodayDateString();
+            if (!loanStartDateInput.value) loanStartDateInput.value = todayStr;
+            if (!paymentDateInput.value) paymentDateInput.value = todayStr;
+            if (!calculationDateInput.value) calculationDateInput.value = getDateStringOneYearFromToday();
+        }
+
+        function performDebtCalculation() {
+            const loanAmountVal = parseFloat(loanAmountInput.value);
+            const annualInterestRate = parseFloat(interestRateInput.value);
+            const loanStartDateStr = loanStartDateInput.value;
+            const calculationDateStr = calculationDateInput.value;
+
+            if (isNaN(loanAmountVal) || loanAmountVal <= 0) {
+                totalDebtResultUI.textContent = "Ange ett giltigt lånebelopp.";
+                transactionsTableBodyUI.innerHTML = '';
+                return;
+            }
+            if (isNaN(annualInterestRate) || annualInterestRate < 0) {
+                totalDebtResultUI.textContent = "Ange en giltig årlig ränta.";
+                transactionsTableBodyUI.innerHTML = '';
+                return;
+            }
+            if (!loanStartDateStr) {
+                totalDebtResultUI.textContent = "Ange lånets startdatum.";
+                transactionsTableBodyUI.innerHTML = '';
+                return;
+            }
+            if (!calculationDateStr) {
+                totalDebtResultUI.textContent = "Ange datum för skulberäkning.";
+                transactionsTableBodyUI.innerHTML = '';
+                return;
+            }
+            
+            const calcDate = new Date(calculationDateStr);
+            const loanStartDate = new Date(loanStartDateStr);
+
+            if (calcDate < loanStartDate) {
+                totalDebtResultUI.textContent = `Skulden beräknas till ${calculationDateStr}: 0.00 SEK`;
+                transactionsTableBodyUI.innerHTML = '';
+                if (document.activeElement !== calculationDateInput && document.activeElement !== loanStartDateInput) {
+                   alert("Beräkningsdatum kan inte vara före lånets startdatum.");
+                }
+                return;
+            }
+
+            let currentPrincipal = loanAmountVal;
+            let lastProcessedDateStr = loanStartDateStr;
+            const transactions = [];
+
+            transactions.push({ 
+                date: loanStartDateStr, 
+                description: "Ursprungligt lån", 
+                change: loanAmountVal, 
+                balance: currentPrincipal 
+            });
+
+            const relevantPayments = payments
+                .filter(p => {
+                    const paymentDate = new Date(p.date);
+                    return paymentDate >= loanStartDate && paymentDate <= calcDate;
+                })
+                .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            for (const payment of relevantPayments) {
+                const daysForInterest = daysBetween(lastProcessedDateStr, payment.date);
+                if (daysForInterest > 0) {
+                    const interest = currentPrincipal * (annualInterestRate / 100 / 365) * daysForInterest;
+                    const roundedInterest = parseFloat(interest.toFixed(2));
+                    if (roundedInterest !== 0) {
+                        currentPrincipal += roundedInterest;
+                        transactions.push({
+                            date: payment.date,
+                            description: "Ränta",
+                            change: roundedInterest,
+                            balance: currentPrincipal
+                        });
+                    }
+                }
+
+                currentPrincipal -= payment.amount;
+                transactions.push({
+                    date: payment.date,
+                    description: "Inbetalning",
+                    change: -payment.amount,
+                    balance: currentPrincipal
+                });
+                lastProcessedDateStr = payment.date;
+            }
+
+            const finalDaysForInterest = daysBetween(lastProcessedDateStr, calculationDateStr);
+            if (finalDaysForInterest > 0 && currentPrincipal > 0) {
+                const interest = currentPrincipal * (annualInterestRate / 100 / 365) * finalDaysForInterest;
+                const roundedInterest = parseFloat(interest.toFixed(2));
+                 if (roundedInterest !== 0) {
+                    currentPrincipal += roundedInterest;
+                    transactions.push({
+                        date: calculationDateStr,
+                        description: "Ränta",
+                        change: roundedInterest,
+                        balance: currentPrincipal
+                    });
+                }
+            }
+            
+            transactions.sort((a,b) => {
+                const dateDiff = new Date(a.date) - new Date(b.date);
+                if (dateDiff !== 0) return dateDiff;
+                const typeOrder = {"Ursprungligt lån": 0, "Ränta": 1, "Inbetalning": 2};
+                return (typeOrder[a.description] || 99) - (typeOrder[b.description] || 99);
+            });
+
+            transactionsTableBodyUI.innerHTML = '';
+            let runningDisplayBalance = 0.0;
+            transactions.forEach(t => {
+                if (t.description === "Ursprungligt lån") {
+                    runningDisplayBalance = t.change;
+                } else {
+                    runningDisplayBalance += t.change;
+                }
+                t.balance = runningDisplayBalance;
+
+                const row = transactionsTableBodyUI.insertRow();
+                row.insertCell().textContent = t.date;
+                row.insertCell().textContent = t.description;
+                row.insertCell().textContent = t.change.toFixed(2);
+                row.insertCell().textContent = t.balance.toFixed(2);
+            });
+            
+            totalDebtResultUI.textContent = `Total skuld per ${calculationDateStr}: ${currentPrincipal.toFixed(2)} SEK`;
+        }
+
+        function renderPayments() {
+            paymentsListUI.innerHTML = '';
+            payments.sort((a, b) => new Date(a.date) - new Date(b.date));
+            payments.forEach((payment, index) => {
+                const li = document.createElement('li');
+                li.textContent = `${payment.date}: ${payment.amount.toFixed(2)} SEK`;
+                
+                const removeBtn = document.createElement('button');
+                removeBtn.textContent = 'Ta bort';
+                removeBtn.onclick = () => {
+                    payments.splice(index, 1);
+                    renderPayments();
+                    performDebtCalculation();
+                };
+                li.appendChild(removeBtn);
+                paymentsListUI.appendChild(li);
+            });
+        }
+        
+        addPaymentBtn.addEventListener('click', () => {
+            const date = paymentDateInput.value;
+            const amount = parseFloat(paymentAmountInput.value);
+
+            if (!date) {
+                alert("Vänligen ange datum för inbetalningen.");
+                return;
+            }
+            if (isNaN(amount) || amount <= 0) {
+                alert("Vänligen ange ett giltigt positivt belopp för inbetalningen.");
+                return;
+            }
+            const loanStartDate = new Date(loanStartDateInput.value);
+            if (!loanStartDateInput.value){
+                 alert("Vänligen ange lånets startdatum först.");
+                return;
+            }
+            if (new Date(date) < loanStartDate) {
+                alert("Inbetalningsdatum kan inte vara före lånets startdatum.");
+                return;
+            }
+
+            payments.push({ date, amount });
+            renderPayments();
+            performDebtCalculation();
+            
+            paymentAmountInput.value = '';
+            paymentDateInput.value = getTodayDateString();
+        });
+
+        function daysBetween(startDateStr, endDateStr) {
+            const startDate = new Date(startDateStr);
+            const endDate = new Date(endDateStr);
+            startDate.setHours(0, 0, 0, 0);
+            endDate.setHours(0, 0, 0, 0);
+
+            if (endDate < startDate) return 0;
+            
+            const diffTime = endDate.getTime() - startDate.getTime();
+            return Math.round(diffTime / (1000 * 60 * 60 * 24));
+        }
+        
+        loanAmountInput.addEventListener('input', performDebtCalculation);
+        interestRateInput.addEventListener('input', performDebtCalculation);
+        loanStartDateInput.addEventListener('change', performDebtCalculation);
+        calculationDateInput.addEventListener('change', performDebtCalculation);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeDefaultDates();
+            performDebtCalculation();
+        });
+    </script>
+</body>
+</html>
